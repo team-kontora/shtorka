@@ -1,13 +1,21 @@
-"""Templates kept in a single JSON file next to the code (the file is gitignored)."""
+"""Templates kept in a single JSON file."""
 import hashlib
 import json
+import sys
 import uuid
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 from PySide6.QtCore import QObject, QTimer, Signal
 
-TEMPLATES_FILE = Path(__file__).resolve().parent.parent / "templates.json"
+from . import config
+
+if getattr(sys, "frozen", False):
+    # the packaged exe unpacks its code to a temp folder, so the file lives with the settings
+    TEMPLATES_FILE = config.BASE / "templates.json"
+else:
+    # run from source: next to the code, where git ignores it
+    TEMPLATES_FILE = Path(__file__).resolve().parent.parent / "templates.json"
 
 
 @dataclass

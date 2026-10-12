@@ -7,6 +7,8 @@ NAME = "Shtorka"
 
 
 def _command() -> str:
+    if getattr(sys, "frozen", False):
+        return f'"{sys.executable}"'
     python = Path(sys.executable)
     pythonw = python.with_name("pythonw.exe")
     launcher = Path(__file__).resolve().parent.parent / "run.pyw"
