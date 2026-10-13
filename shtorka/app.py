@@ -4,9 +4,10 @@ from PySide6.QtCore import QLockFile, Qt
 from PySide6.QtGui import QAction, QActionGroup, QColor, QFont, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import QApplication, QColorDialog, QDialog, QMenu, QSystemTrayIcon
 
-from . import autostart, config, theme
+from . import __version__, autostart, config, theme
 from .drawer import Drawer
 from .store import Store
+from .updater import Updater
 
 
 def _icon() -> QIcon:
@@ -107,6 +108,8 @@ def main() -> int:
     cfg = config.load()
     store = Store()
     drawer = Drawer(cfg, store)
+    # only the packaged exe can replace itself
+    updater = Updater(lock) if getattr(sys, "frozen", False) and cfg["auto_update"] else None
 
     menu = QMenu()
     _look_menus(menu, drawer)
@@ -118,7 +121,7 @@ def main() -> int:
     menu.addAction("Выход", app.quit)
 
     tray = QSystemTrayIcon(_icon())
-    tray.setToolTip("Shtorka")
+    tray.setToolTip(f"Shtorka {__version__}")
     tray.setContextMenu(menu)
     tray.show()
 

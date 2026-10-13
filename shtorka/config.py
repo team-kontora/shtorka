@@ -9,6 +9,7 @@ DEFAULTS = {
     "process_names": ["telegram.exe", "ayugram.exe", "64gram.exe"],
     "color": "#000000",
     "style": "flat",
+    "auto_update": True,
 }
 
 
