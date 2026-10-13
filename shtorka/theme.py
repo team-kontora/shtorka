@@ -26,7 +26,10 @@ QWidget {{ color: {fg}; font-family: "Segoe UI"; font-size: 13px; }}
 #tab {{ font-size: 12px; font-weight: 600; }}
 #row {{ padding: 0 12px; }}
 #row:hover {{ background: {hover}; }}
-#add {{ color: {muted}; text-align: left; padding: 0 12px; border: none; border-top: 1px solid {hover}; border-radius: 0; }}
+#add {{
+    color: {muted}; text-align: left; padding: 0 12px;
+    border: none; border-top: 1px solid {hover}; border-radius: 0;
+}}
 #add:hover {{ color: {fg}; background: {hover}; }}
 QLineEdit, QPlainTextEdit {{
     background: {field}; border: 1px solid {border}; border-radius: 6px; padding: 6px;

@@ -77,3 +77,11 @@ python -m venv .venv
 Собрать установщик `dist\ShtorkaSetup.exe`: `.\build.ps1`. Нужен [Inno Setup](https://jrsoftware.org/isinfo.php): `winget install JRSoftware.InnoSetup`.
 
 Выпустить обновление: поднимите `__version__` в `shtorka\__init__.py`, закоммитьте, запушьте и запустите `.\release.ps1`. Он соберёт установщик и опубликует релиз с тегом `v<версия>` (нужен [GitHub CLI](https://cli.github.com/)); запущенные копии подхватят его сами. Вместе с установщиком в релиз попадает однофайловый `Shtorka.exe`: через него на установленную версию переходят копии 1.0.2.
+
+Проверки (их же запускает CI на каждый push и pull request):
+
+```powershell
+.venv\Scripts\pip install -r requirements-dev.txt
+.venv\Scripts\ruff check .
+.venv\Scripts\pytest
+```
