@@ -66,3 +66,11 @@ python -m venv .venv
 При запуске из исходников `templates.json` лежит в папке проекта и не попадает в git.
 
 Собрать `dist\Shtorka.exe`: `.\build.ps1`.
+
+Проверки (их же запускает CI на каждый push и pull request):
+
+```powershell
+.venv\Scripts\pip install -r requirements-dev.txt
+.venv\Scripts\ruff check .
+.venv\Scripts\pytest
+```
