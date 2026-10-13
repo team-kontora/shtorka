@@ -1,6 +1,7 @@
 """Templates kept in a single JSON file."""
 import hashlib
 import json
+import os
 import sys
 import uuid
 from dataclasses import asdict, dataclass, field
@@ -30,6 +31,10 @@ def _fallback_id(entry: dict) -> str:
     return hashlib.md5(f"{entry['title']}\0{entry['text']}".encode()).hexdigest()[:12]
 
 
+class BrokenFile(Exception):
+    """The templates file exists but cannot be read; writing over it would lose the templates."""
+
+
 class Store(QObject):
     changed = Signal()
 
@@ -54,23 +59,42 @@ class Store(QObject):
             self._mtime = mtime
             self.changed.emit()
 
+    def _read(self) -> list[Template]:
+        try:
+            text = self.path.read_text(encoding="utf-8")
+        except FileNotFoundError:
+            return []
+        except OSError as e:
+            raise BrokenFile(str(e)) from e
+        if not text.strip():
+            return []
+        try:
+            data = json.loads(text)
+            return [Template(d["title"], d["text"], d.get("id") or _fallback_id(d)) for d in data]
+        except (ValueError, KeyError, TypeError, AttributeError) as e:
+            raise BrokenFile(str(e)) from e
+
     def load(self) -> list[Template]:
         try:
-            data = json.loads(self.path.read_text(encoding="utf-8"))
-            return [Template(d["title"], d["text"], d.get("id") or _fallback_id(d)) for d in data]
-        except (OSError, ValueError, KeyError, TypeError):
+            return self._read()
+        except BrokenFile:
             return []
 
     def _write(self, templates: list[Template]) -> None:
         templates.sort(key=lambda t: t.title.casefold())
-        self.path.write_text(
+        # write a copy first, so that a crash halfway leaves the old file whole
+        temp = self.path.with_name(self.path.name + ".tmp")
+        temp.write_text(
             json.dumps([asdict(t) for t in templates], ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
         )
+        os.replace(temp, self.path)
         self._mtime = self._stat()
         self.changed.emit()
 
     def save(self, tpl: Template) -> None:
-        self._write([t for t in self.load() if t.id != tpl.id] + [tpl])
+        """Raises BrokenFile rather than overwrite a file it cannot read."""
+        self._write([t for t in self._read() if t.id != tpl.id] + [tpl])
 
     def delete(self, tpl: Template) -> None:
-        self._write([t for t in self.load() if t.id != tpl.id])
+        """Raises BrokenFile rather than overwrite a file it cannot read."""
+        self._write([t for t in self._read() if t.id != tpl.id])

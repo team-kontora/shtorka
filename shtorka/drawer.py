@@ -18,8 +18,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from . import theme, tgwin
-from .store import Store, Template
+from . import tgwin, theme
+from .store import BrokenFile, Store, Template
 
 # the tab covers Telegram's title bar from the line that ends the chat list up to the window buttons;
 # this offset is the fallback for when that line cannot be found on screen
@@ -418,7 +418,10 @@ class Drawer(QWidget):
             tpl.title, tpl.text = title, text
         else:
             tpl = Template(title, text)
-        self.store.save(tpl)
+        try:
+            self.store.save(tpl)
+        except BrokenFile as e:
+            self._broken(e)
 
     def remove(self, tpl: Template):
         box = QMessageBox(QMessageBox.Question, "Удалить шаблон", f"Удалить «{tpl.title}»?", parent=self)
@@ -431,7 +434,25 @@ class Drawer(QWidget):
         finally:
             self._busy = False
         if box.clickedButton() is yes:
-            self.store.delete(tpl)
+            try:
+                self.store.delete(tpl)
+            except BrokenFile as e:
+                self._broken(e)
+
+    def _broken(self, error: BrokenFile):
+        box = QMessageBox(
+            QMessageBox.Warning,
+            "Шаблоны не сохранены",
+            f"Не удалось прочитать файл шаблонов, поэтому он не тронут:\n{self.store.path}\n\n{error}\n\n"
+            "Исправьте или удалите файл и повторите.",
+            parent=self,
+        )
+        box.setWindowFlag(Qt.WindowStaysOnTopHint)
+        self._busy = True
+        try:
+            box.exec()
+        finally:
+            self._busy = False
 
     def _flash(self, message: str):
         # the tab doubles as the status line

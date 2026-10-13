@@ -5,3 +5,4 @@ __pycache__/
 templates.json
 build/
 dist/
+*.tmp
