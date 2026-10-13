@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from . import tgwin
+from . import theme, tgwin
 from .store import Store, Template
 
 # the tab covers Telegram's title bar from the line that ends the chat list up to the window buttons;
@@ -39,31 +39,6 @@ CLICK_DELAY_MS = 250
 # ticks Telegram has to stay put after a move before the drawer comes back
 SETTLE_TICKS = 2
 TAB_TEXT = "Шаблоны"
-
-STYLE = """
-QWidget { color: #ffffff; font-family: "Segoe UI"; font-size: 13px; }
-#tab, #panel, #panel QWidget, QDialog { background: #000000; }
-#tab { font-size: 12px; font-weight: 600; }
-#row { padding: 0 12px; }
-#row:hover { background: #262626; }
-#add { color: #8a8a8a; text-align: left; padding: 0 12px; border: none; border-top: 1px solid #262626; border-radius: 0; }
-#add:hover { color: #ffffff; background: #262626; }
-QLineEdit, QPlainTextEdit {
-    background: #1a1a1a; border: 1px solid #333333; border-radius: 6px; padding: 6px;
-    selection-background-color: #444444;
-}
-QLineEdit:focus, QPlainTextEdit:focus { border-color: #777777; }
-QPushButton { background: #2a2a2a; border: none; border-radius: 6px; padding: 6px 12px; }
-QPushButton:hover { background: #3a3a3a; }
-QMenu { background: #111111; border: 1px solid #333333; padding: 4px; }
-QMenu::item { padding: 5px 18px; }
-QMenu::item:selected { background: #2a2a2a; }
-QScrollArea { border: none; }
-QScrollBar:vertical { background: transparent; width: 6px; }
-QScrollBar::handle { background: #3a3a3a; border-radius: 3px; min-height: 24px; }
-QScrollBar::add-line, QScrollBar::sub-line { height: 0; }
-QScrollBar::add-page, QScrollBar::sub-page { background: transparent; }
-"""
 
 
 def _elided(text: str, width: int) -> str:
@@ -186,7 +161,6 @@ class Drawer(QWidget):
         self.setAttribute(Qt.WA_ShowWithoutActivating)
         # the list is narrower than the tab; the rest of the window stays see-through
         self.setAttribute(Qt.WA_TranslucentBackground)
-        self.setStyleSheet(STYLE)
 
         self.tab = Tab(TAB_TEXT)
         self.tab.drag.connect(lambda: self._tg and tgwin.drag(self._tg.hwnd))
@@ -194,6 +168,7 @@ class Drawer(QWidget):
         self.tab.setObjectName("tab")
         self.tab.setAlignment(Qt.AlignCenter)
         self.tab.setFixedHeight(TAB_HEIGHT)
+        self.tab.setProperty("open", False)
 
         self.rows = QVBoxLayout()
         self.rows.setContentsMargins(0, 0, 0, 0)
@@ -242,6 +217,7 @@ class Drawer(QWidget):
         self._anim = QVariantAnimation(self, duration=140, easingCurve=QEasingCurve.OutCubic)
         self._anim.valueChanged.connect(self._set_extent)
 
+        self.apply_look()
         store.changed.connect(self.refresh)
         self.refresh()
 
@@ -327,6 +303,11 @@ class Drawer(QWidget):
 
     def _set_open(self, is_open: bool, animate: bool = True):
         self._open = is_open
+        if self.tab.property("open") != is_open:
+            # the rounded style squares the tab's corners while the list hangs from it
+            self.tab.setProperty("open", is_open)
+            self.tab.style().unpolish(self.tab)
+            self.tab.style().polish(self.tab)
         target = self._target()
         self._anim.stop()
         if target == self._extent:
@@ -374,6 +355,9 @@ class Drawer(QWidget):
     def _set_extent(self, value):
         self._extent = float(value)
         self._place()
+
+    def apply_look(self):
+        self.setStyleSheet(theme.stylesheet(self.cfg.get("color"), self.cfg.get("style")))
 
     # --- templates -----------------------------------------------------------
 
