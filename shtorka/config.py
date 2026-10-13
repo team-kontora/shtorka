@@ -16,9 +16,16 @@ DEFAULTS = {
 def load() -> dict:
     cfg = dict(DEFAULTS)
     try:
-        cfg.update(json.loads(CONFIG_FILE.read_text(encoding="utf-8")))
+        data = json.loads(CONFIG_FILE.read_text(encoding="utf-8"))
     except (OSError, ValueError):
-        pass
+        data = None
+    if isinstance(data, dict):
+        cfg.update(data)
+    names = cfg["process_names"]
+    if not isinstance(names, list) or not all(isinstance(n, str) for n in names):
+        names = DEFAULTS["process_names"]
+    # process names are compared in lower case
+    cfg["process_names"] = [n.lower() for n in names]
     return cfg
 
 
