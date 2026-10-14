@@ -280,7 +280,6 @@ class Drawer(QWidget):
         self.cfg = cfg
         self.store = store
         self._tg: tgwin.Window | None = None
-        self._geometry = None
         self._open = False
         # a menu or dialog of ours is up: leave the drawer exactly as it is
         self._busy = False
@@ -405,7 +404,6 @@ class Drawer(QWidget):
         if not self.isVisible():
             self.show()
             # showing resets the size Qt did not set itself, so apply it again
-            self._geometry = None
             self._place()
         self.hotkey.hold(int(self.winId()), True)
 
@@ -413,7 +411,6 @@ class Drawer(QWidget):
         # other programs get the keys back while Telegram is in the background
         self.hotkey.hold(int(self.winId()), False)
         self._leave_keyboard()
-        self._geometry = None
         self.hide()
         self._set_open(False, animate=False)
 
@@ -497,9 +494,11 @@ class Drawer(QWidget):
         width = max(0, min(tg.right, work.right) - frame - round(CAPTION_BUTTONS * scale) - x)
         height = min(round(self._extent * scale), tg.bottom - top)
         geometry = (x, top, width, height)
-        if geometry != self._geometry:
-            self._geometry = geometry
-            tgwin.move(int(self.winId()), *geometry)
+        # compared with where the window really is, not where it was put last: Windows moves it by itself
+        # when it lands on a monitor with another scale, after a display change or on waking up
+        hwnd = int(self.winId())
+        if tgwin.geometry(hwnd) != geometry:
+            tgwin.move(hwnd, *geometry)
 
     def _find_divider(self):
         tg = self._tg

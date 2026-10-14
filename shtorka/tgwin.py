@@ -91,6 +91,7 @@ user32.GetDpiForWindow.argtypes = [wintypes.HWND]
 user32.MonitorFromWindow.argtypes = [wintypes.HWND, wintypes.DWORD]
 user32.MonitorFromWindow.restype = wintypes.HANDLE
 user32.GetMonitorInfoW.argtypes = [wintypes.HANDLE, ctypes.POINTER(MONITORINFO)]
+user32.GetWindowRect.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.RECT)]
 user32.SetWindowPos.argtypes = [
     wintypes.HWND, wintypes.HWND, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, wintypes.UINT,
 ]
@@ -193,6 +194,13 @@ def work_area(hwnd) -> wintypes.RECT:
 
 def move(hwnd, x: int, y: int, w: int, h: int) -> None:
     user32.SetWindowPos(hwnd, None, x, y, w, h, SWP_NOZORDER | SWP_NOACTIVATE)
+
+
+def geometry(hwnd) -> tuple[int, int, int, int]:
+    """Where the window really is, as (x, y, width, height) in physical pixels."""
+    rect = wintypes.RECT()
+    user32.GetWindowRect(hwnd, ctypes.byref(rect))
+    return rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top
 
 
 def screen_row(x: int, y: int, width: int) -> bytes:

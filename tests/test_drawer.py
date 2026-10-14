@@ -1,3 +1,5 @@
+from ctypes import wintypes
+
 import pytest
 from PySide6.QtCore import QEvent, QObject, Qt, Signal
 from PySide6.QtGui import QKeyEvent
@@ -223,3 +225,27 @@ def test_set_hotkey_switches_at_once(make):
     assert d.tab.toolTip().startswith("Alt+Q")
     d.set_hotkey("")
     assert d.hotkey.keys is None and d.tab.toolTip() == ""
+
+
+def test_the_drawer_goes_back_when_something_else_moves_it(make, monkeypatch):
+    d = make()
+    monkeypatch.setattr(tgwin, "scale", lambda hwnd: 1.0)
+    monkeypatch.setattr(tgwin, "work_area", lambda hwnd: wintypes.RECT(0, 0, 1920, 1040))
+    monkeypatch.setattr(tgwin, "is_maximized", lambda hwnd: True)
+    screen, moves = {}, []
+
+    def move(hwnd, *geometry):
+        screen[hwnd] = geometry
+        moves.append(geometry)
+
+    monkeypatch.setattr(tgwin, "move", move)
+    monkeypatch.setattr(tgwin, "geometry", lambda hwnd: screen.get(hwnd))
+    d._place()
+    d._place()
+    # in place already: the window is left alone
+    assert len(moves) == 1
+    placed, hwnd = moves[0], int(d.winId())
+    # what Windows does to a window that lands on a monitor with another scale
+    screen[hwnd] = (placed[0] - 30, placed[1] + 30, round(placed[2] * 1.25), round(placed[3] * 1.25))
+    d._place()
+    assert screen[hwnd] == placed
