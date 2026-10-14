@@ -2,8 +2,9 @@
 $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot
 
-$python = ".venv\Scripts\python.exe"
-& $python -m pip install --quiet --disable-pip-version-check -r requirements.txt pyinstaller
+# the project venv locally, the Python set up by the workflow in CI
+$python = if (Test-Path .venv\Scripts\python.exe) { ".venv\Scripts\python.exe" } else { "python" }
+& $python -m pip install --quiet --disable-pip-version-check -r requirements.txt -r requirements-build.txt
 if ($LASTEXITCODE) { throw "pip failed" }
 
 New-Item -ItemType Directory -Force build | Out-Null

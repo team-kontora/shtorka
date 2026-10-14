@@ -1,0 +1,57 @@
+name: Release
+
+# a v* tag builds the installer and publishes it; a manual run only builds it
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Check that the tag matches the version
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          $version = python -c "import shtorka; print(shtorka.__version__)"
+          if ("v$version" -ne $env:GITHUB_REF_NAME) { throw "tag $env:GITHUB_REF_NAME does not match __version__ $version" }
+
+      # antivirus engines flag the stock PyInstaller bootloader because malware ships it too;
+      # one compiled here differs from it
+      - name: Install PyInstaller with a bootloader built from source
+        env:
+          PYINSTALLER_COMPILE_BOOTLOADER: "1"
+        run: |
+          python -m pip install --disable-pip-version-check --no-cache-dir --no-binary pyinstaller -r requirements-build.txt
+          python -c "import hashlib, pathlib, PyInstaller; f = pathlib.Path(PyInstaller.__file__).parent / 'bootloader/Windows-64bit-intel/runw.exe'; print('bootloader', hashlib.sha256(f.read_bytes()).hexdigest())"
+
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+
+      - name: Build
+        run: .\build.ps1
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shtorka
+          path: |
+            dist/ShtorkaSetup.exe
+            dist/Shtorka.exe
+            build/shtorka.ico
+
+      - name: Publish the release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $version = $env:GITHUB_REF_NAME.TrimStart("v")
+          gh release create $env:GITHUB_REF_NAME dist\ShtorkaSetup.exe dist\Shtorka.exe --title "Shtorka $version" --generate-notes
+          if ($LASTEXITCODE) { throw "gh release failed" }
