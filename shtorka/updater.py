@@ -31,7 +31,8 @@ IDLE_POLL_MS = 5 * 1000
 
 
 def launch(exe: Path, *args: str) -> None:
-    # without the reset a packaged exe started from this one would take itself for its child and reuse its unpacked files
+    # without the reset a packaged exe started from this one would take itself for its child
+    # and reuse its unpacked files
     subprocess.Popen([str(exe), *args], env={**os.environ, "PYINSTALLER_RESET_ENVIRONMENT": "1"})
 
 

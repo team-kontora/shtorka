@@ -117,8 +117,8 @@ def main() -> int:
     cfg = config.load()
     store = Store()
     drawer = Drawer(cfg, store)
-    # a run from source has nothing to update
-    update = updater.Updater(lock) if updater.FROZEN and cfg["auto_update"] else None
+    # a run from source has nothing to update; the name keeps the updater alive while the app runs
+    _update = updater.Updater(lock) if updater.FROZEN and cfg["auto_update"] else None
 
     menu = QMenu()
     _look_menus(menu, drawer)
