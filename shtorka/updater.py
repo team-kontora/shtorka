@@ -6,6 +6,8 @@ import subprocess
 import sys
 import tempfile
 import threading
+import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -15,6 +17,9 @@ from PySide6.QtWidgets import QApplication
 from . import __version__, config
 
 LATEST_URL = "https://api.github.com/repos/team-kontora/shtorka/releases/latest"
+# github.com redirects this page to the latest release's tag; unlike the API, which allows 60 requests an hour
+# from one IP address, it has no such limit, so checking it every minute is fine even for a whole office
+LATEST_PAGE = "https://github.com/team-kontora/shtorka/releases/latest"
 ASSET = "ShtorkaSetup.exe"
 # remembers the release installed last, so a release whose exe reports an older version is not installed in a loop
 INSTALLED_FILE = config.BASE / "updated_to.txt"
@@ -26,7 +31,7 @@ PORTABLE = FROZEN and Path(sys._MEIPASS).parent != Path(sys.executable).parent
 INSTALLED_EXE = Path(os.environ.get("LOCALAPPDATA", Path.home())) / "Programs" / "Shtorka" / "Shtorka.exe"
 
 FIRST_CHECK_MS = 15 * 1000
-CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000
+CHECK_INTERVAL_MS = 60 * 1000
 IDLE_POLL_MS = 5 * 1000
 
 
@@ -45,6 +50,31 @@ def _open(url: str):
     return urllib.request.urlopen(request, timeout=30)
 
 
+class _KeepRedirect(urllib.request.HTTPRedirectHandler):
+    # the redirect itself is the answer, so it is not followed
+    def redirect_request(self, *args, **kwargs):
+        return None
+
+
+def _tag_from(location: str) -> str:
+    """'https://github.com/owner/repo/releases/tag/v1.0.4' -> 'v1.0.4'"""
+    path = urllib.parse.urlsplit(location).path.rstrip("/")
+    if "/releases/tag/" not in path:
+        raise ValueError(f"not a release page: {location}")
+    return urllib.parse.unquote(path.rsplit("/", 1)[1])
+
+
+def _latest_tag() -> str:
+    request = urllib.request.Request(LATEST_PAGE, method="HEAD", headers={"User-Agent": f"Shtorka/{__version__}"})
+    try:
+        urllib.request.build_opener(_KeepRedirect).open(request, timeout=30).close()
+    except urllib.error.HTTPError as e:
+        if e.code in (301, 302, 303, 307, 308):
+            return _tag_from(e.headers["Location"])
+        raise
+    raise ValueError("github.com did not redirect to a release")
+
+
 def _wanted(tag: str) -> bool:
     if PORTABLE:
         # the single-file copy moves to the installed app even when that is the same version
@@ -59,6 +89,9 @@ def _wanted(tag: str) -> bool:
 
 def _download(target: Path) -> str | None:
     """Puts the Setup of a release worth installing into target and returns its tag, or None when there is none."""
+    # the cheap look every minute; the API is asked only once there is something to install
+    if not _wanted(_latest_tag()):
+        return None
     with _open(LATEST_URL) as response:
         release = json.load(response)
     tag = release["tag_name"]
