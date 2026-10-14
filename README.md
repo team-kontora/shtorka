@@ -4,8 +4,11 @@
 [![Release](https://img.shields.io/github/v/release/team-kontora/shtorka)](https://github.com/team-kontora/shtorka/releases/latest)
 ![Windows](https://img.shields.io/badge/platform-Windows-0078d4)
 ![Python](https://img.shields.io/badge/python-3.11%2B-3776ab)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 Шаблоны сообщений для Telegram Desktop на Windows. На заголовке окна Telegram появляется вкладка «Шаблоны»: наведите на неё мышь, и выпадет список заготовленных ответов. Один клик вставляет текст в открытый чат.
+
+![Открытая шторка со списком шаблонов](docs/drawer.png)
 
 Telegram при этом не меняется: Shtorka работает отдельным процессом и пристраивается к его окну снаружи.
 
@@ -90,3 +93,7 @@ python -m venv .venv
 - `.\release.ps1` выпускает версию: поднимите `__version__` в [`shtorka/__init__.py`](shtorka/__init__.py), закоммитьте и запушьте, затем запустите скрипт. Он проверит, что дерево чистое и совпадает с `origin/main`, соберёт установщик и опубликует релиз `v<версия>` через [GitHub CLI](https://cli.github.com/). Установленные копии подхватят его сами.
 
 До 1.0.3 Shtorka распространялась одним файлом `Shtorka.exe`. Поэтому в релиз кладётся и он: через него копии 1.0.2 сами переходят на установщик. Версии 1.0.0 и 1.0.1 нужно один раз переставить вручную.
+
+## Лицензия
+
+[MIT](LICENSE)
