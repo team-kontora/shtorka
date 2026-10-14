@@ -5,7 +5,7 @@ from PySide6.QtCore import QLockFile, Qt
 from PySide6.QtGui import QAction, QActionGroup, QColor, QFont, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import QApplication, QColorDialog, QDialog, QMenu, QSystemTrayIcon
 
-from . import __version__, autostart, config, theme, updater
+from . import __version__, autostart, config, hotkey, theme, updater
 from .drawer import Drawer
 from .store import Store
 
@@ -94,6 +94,23 @@ def _look_menus(menu: QMenu, drawer: Drawer) -> None:
     sync()
 
 
+def _hotkey_action(menu: QMenu, drawer: Drawer) -> None:
+    """Tray item that shows the hotkey and lets the user press another one; the choice is saved to config.json."""
+
+    def label():
+        value = drawer.cfg.get("hotkey")
+        return f"Горячая клавиша: {value}…" if hotkey.parse(value) else "Горячая клавиша: выключена…"
+
+    def choose():
+        value = drawer.choose_hotkey()
+        if value is not None:
+            config.save(hotkey=value)
+            action.setText(label())
+
+    action = menu.addAction(label())
+    action.triggered.connect(choose)
+
+
 def main() -> int:
     app = QApplication(sys.argv)
     app.setApplicationName("Shtorka")
@@ -122,6 +139,7 @@ def main() -> int:
 
     menu = QMenu()
     _look_menus(menu, drawer)
+    _hotkey_action(menu, drawer)
     menu.addSeparator()
     startup = QAction("Запускать вместе с Windows", menu, checkable=True, checked=autostart.is_enabled())
     startup.toggled.connect(autostart.set_enabled)

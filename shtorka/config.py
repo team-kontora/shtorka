@@ -10,6 +10,8 @@ DEFAULTS = {
     "color": "#000000",
     "style": "flat",
     "auto_update": True,
+    # opens the drawer for the keyboard while Telegram is active; "" turns it off
+    "hotkey": "Ctrl+Space",
 }
 
 

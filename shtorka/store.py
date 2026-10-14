@@ -26,6 +26,21 @@ class Template:
     id: str = field(default_factory=lambda: uuid.uuid4().hex[:12])
 
 
+def _fold(text: str) -> str:
+    # people type е for ё
+    return text.casefold().replace("ё", "е")
+
+
+def search(templates: list[Template], query: str) -> list[Template]:
+    """Templates that contain every word of the query; those with all of them in the title come first."""
+    words = _fold(query).split()
+    if not words:
+        return list(templates)
+    in_title = [t for t in templates if all(w in _fold(t.title) for w in words)]
+    in_text = [t for t in templates if t not in in_title and all(w in _fold(f"{t.title}\n{t.text}") for w in words)]
+    return in_title + in_text
+
+
 def _fallback_id(entry: dict) -> str:
     # entries typed into the file by hand have no id; derive one that survives reloads
     return hashlib.md5(f"{entry['title']}\0{entry['text']}".encode()).hexdigest()[:12]

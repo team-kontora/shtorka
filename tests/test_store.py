@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from shtorka.store import BrokenFile, Store, Template
+from shtorka.store import BrokenFile, Store, Template, search
 
 
 @pytest.fixture
@@ -57,3 +57,31 @@ def test_blank_file_is_empty(store):
 def test_write_leaves_no_temp_file(store):
     store.save(Template("a", "1"))
     assert [p.name for p in store.path.parent.iterdir()] == ["templates.json"]
+
+
+TEMPLATES = [
+    Template("Приветствие", "Здравствуйте! Чем могу помочь?"),
+    Template("Сроки доставки", "Доставка занимает 2–3 рабочих дня."),
+    Template("Ещё вопрос", "Остались вопросы по доставке?"),
+]
+
+
+def titles(found):
+    return [t.title for t in found]
+
+
+def test_search_without_query_keeps_everything():
+    assert titles(search(TEMPLATES, "  ")) == titles(TEMPLATES)
+
+
+def test_search_puts_title_matches_first():
+    assert titles(search(TEMPLATES, "ДОСТ")) == ["Сроки доставки", "Ещё вопрос"]
+
+
+def test_search_needs_every_word():
+    assert titles(search(TEMPLATES, "срок дост")) == ["Сроки доставки"]
+    assert search(TEMPLATES, "срок оплаты") == []
+
+
+def test_search_treats_yo_as_ye():
+    assert titles(search(TEMPLATES, "еще")) == ["Ещё вопрос"]

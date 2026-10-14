@@ -25,7 +25,9 @@ QWidget {{ color: {fg}; font-family: "Segoe UI"; font-size: 13px; }}
 #tab, #panel, #panel QWidget, QDialog {{ background: {bg}; }}
 #tab {{ font-size: 12px; font-weight: 600; }}
 #row {{ padding: 0 12px; }}
-#row:hover {{ background: {hover}; }}
+#row:hover, #row[selected="true"] {{ background: {hover}; }}
+#search {{ background: {bg}; border: none; border-bottom: 1px solid {hover}; border-radius: 0; padding: 0 12px; }}
+#hint {{ color: {muted}; }}
 #add {{
     color: {muted}; text-align: left; padding: 0 12px;
     border: none; border-top: 1px solid {hover}; border-radius: 0;
@@ -38,6 +40,7 @@ QLineEdit, QPlainTextEdit {{
 QLineEdit:focus, QPlainTextEdit:focus {{ border-color: {focus}; }}
 QPushButton {{ background: {button}; border: none; border-radius: 6px; padding: 6px 12px; }}
 QPushButton:hover {{ background: {button_hover}; }}
+QPushButton:disabled {{ color: {muted}; background: {menu}; }}
 QMenu {{ background: {menu}; border: 1px solid {border}; padding: 4px; }}
 QMenu::item {{ padding: 5px 18px; }}
 QMenu::item:selected {{ background: {button}; }}
