@@ -175,7 +175,7 @@ class Drawer(QWidget):
         self.rows.setSpacing(0)
         holder = QWidget()
         holder.setLayout(self.rows)
-        scroll = QScrollArea()
+        self.scroll = scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         scroll.setWidget(holder)
@@ -374,6 +374,8 @@ class Drawer(QWidget):
             row.menu.connect(self.show_menu)
             self.rows.addWidget(row)
         self.rows.addStretch(1)
+        # an empty list would still take room from the add button, which is all the drawer opens to then
+        self.scroll.setVisible(bool(templates))
         # the list height follows the number of templates
         self._set_open(self._open)
 
