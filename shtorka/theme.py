@@ -4,12 +4,21 @@ from PySide6.QtGui import QColor
 DEFAULT_COLOR = "#000000"
 DEFAULT_STYLE = "flat"
 
+# dark colours first, then light ones, which get dark text
 COLORS = {
     "Чёрный": "#000000",
+    "Графит": "#2b2d31",
     "Ночной": "#17212b",
     "Синий": "#2b5278",
+    "Бирюзовый": "#1d6b70",
     "Зелёный": "#1f4d3a",
+    "Фиолетовый": "#4b3b7a",
+    "Сливовый": "#7a2e5c",
     "Бордовый": "#5a1e2c",
+    "Коричневый": "#5c4033",
+    "Оранжевый": "#b5561c",
+    "Серый": "#e3e5e8",
+    "Песочный": "#efe6d2",
     "Белый": "#ffffff",
 }
 

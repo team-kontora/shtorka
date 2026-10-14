@@ -27,3 +27,18 @@ def test_bad_values_fall_back(qapp, value):
 
 def test_presets_are_valid(qapp):
     assert all(theme.color(c) == c for c in theme.COLORS.values())
+
+
+def _luminance(hex_color: str) -> float:
+    channels = [int(hex_color[i : i + 2], 16) / 255 for i in (1, 3, 5)]
+    r, g, b = (c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4 for c in channels)
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
+@pytest.mark.parametrize(("name", "background"), theme.COLORS.items())
+def test_presets_keep_text_readable(qapp, name, background):
+    sheet = theme.stylesheet(background, "flat")
+    text = "#000000" if "color: #000000" in sheet else "#ffffff"
+    light, dark = sorted((_luminance(background), _luminance(text)), reverse=True)
+    # WCAG AA for normal text
+    assert (light + 0.05) / (dark + 0.05) >= 4.5, name
