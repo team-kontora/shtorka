@@ -1,4 +1,4 @@
-# Builds the exe and publishes it as a GitHub release; installed copies update themselves from it.
+# Builds the installer and publishes it as a GitHub release; installed copies update themselves from it.
 $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot
 
@@ -14,5 +14,5 @@ if ((gh release list --json tagName --jq ".[].tagName") -contains $tag) {
 }
 
 .\build.ps1
-gh release create $tag dist\Shtorka.exe --title "Shtorka $version" --generate-notes
+gh release create $tag dist\ShtorkaSetup.exe dist\Shtorka.exe --title "Shtorka $version" --generate-notes
 if ($LASTEXITCODE) { throw "gh release failed" }

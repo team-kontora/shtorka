@@ -1,13 +1,13 @@
+import ctypes
 import sys
 
 from PySide6.QtCore import QLockFile, Qt
 from PySide6.QtGui import QAction, QActionGroup, QColor, QFont, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import QApplication, QColorDialog, QDialog, QMenu, QSystemTrayIcon
 
-from . import __version__, autostart, config, theme
+from . import __version__, autostart, config, theme, updater
 from .drawer import Drawer
 from .store import Store
-from .updater import Updater
 
 
 def _icon() -> QIcon:
@@ -100,16 +100,25 @@ def main() -> int:
     app.setApplicationDisplayName("Shtorka")
     app.setQuitOnLastWindowClosed(False)
 
+    if updater.PORTABLE and updater.INSTALLED_EXE.exists():
+        # this single-file copy has already moved to the installed app
+        updater.launch(updater.INSTALLED_EXE)
+        return 0
+
     config.BASE.mkdir(parents=True, exist_ok=True)
     lock = QLockFile(str(config.BASE / "app.lock"))
     if not lock.tryLock(0):
         return 0
+    # Setup looks for this mutex to know that the app is still running
+    ctypes.windll.kernel32.CreateMutexW(None, False, "ShtorkaAppMutex")
+    if updater.FROZEN and not updater.PORTABLE:
+        autostart.follow_exe()
 
     cfg = config.load()
     store = Store()
     drawer = Drawer(cfg, store)
-    # only the packaged exe can replace itself
-    updater = Updater(lock) if getattr(sys, "frozen", False) and cfg["auto_update"] else None
+    # a run from source has nothing to update
+    update = updater.Updater(lock) if updater.FROZEN and cfg["auto_update"] else None
 
     menu = QMenu()
     _look_menus(menu, drawer)
@@ -124,5 +133,12 @@ def main() -> int:
     tray.setToolTip(f"Shtorka {__version__}")
     tray.setContextMenu(menu)
     tray.show()
+    # Setup passes this on the first start: nothing else shows that the app is running
+    if "--welcome" in sys.argv:
+        tray.showMessage(
+            "Shtorka запущена",
+            "Откройте Telegram — вкладка «Шаблоны» появится на его заголовке. Настройки — в меню этого значка.",
+            _icon(),
+        )
 
     return app.exec()

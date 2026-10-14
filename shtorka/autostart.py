@@ -23,6 +23,16 @@ def is_enabled() -> bool:
         return False
 
 
+def follow_exe() -> None:
+    """Point an existing entry at this exe: it may still name the copy that ran before the app was installed."""
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, RUN_KEY) as key:
+            winreg.QueryValueEx(key, NAME)
+    except OSError:
+        return
+    set_enabled(True)
+
+
 def set_enabled(enabled: bool) -> None:
     with winreg.OpenKey(winreg.HKEY_CURRENT_USER, RUN_KEY, 0, winreg.KEY_SET_VALUE) as key:
         if enabled:
